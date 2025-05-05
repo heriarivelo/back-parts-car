@@ -1,0 +1,164 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  name      String
+  email     String   @unique
+  password  String
+  role      Role     @default(USER)
+  createdAt DateTime @default(now())
+}
+
+enum Role {
+  USER
+  CLIENT
+  ADMIN
+  MANAGER
+}
+
+model Product {
+  id             Int               @id @default(autoincrement())
+  codeArt        String            @unique @map("code_art")
+  marque         String?
+  oem            String?
+  autoFinal      String?           @map("auto_final")
+  lib            String?
+  stocks         Stock[]           @relation("ProductStocks")
+  details        ImportedPart[]    @relation("ProductDetails")
+  commandes      PiecesCommande[]  @relation("ProductCommandes")
+  createdAt      DateTime          @default(now()) @map("createdAt")
+  updatedAt      DateTime          @updatedAt @map("updatedAt")
+}
+
+model Import {
+  id            Int             @id @default(autoincrement())
+  tauxDeChange  Decimal
+  fretAvecDD    Decimal
+  fretSansDD    Decimal
+  douane        Decimal
+  tva           Decimal
+  marge         Decimal
+  importedAt    DateTime        @default(now())
+  fileName      String
+  parts         ImportedPart[]  @relation("ImportParts")
+}
+
+model ImportedPart {
+  id            Int       @id @default(autoincrement())
+  import        Import    @relation("ImportParts", fields: [importId], references: [id])
+  importId      Int
+  product       Product?  @relation("ProductDetails", fields: [codeArt], references: [codeArt])
+  codeArt       String    @map("code_art")
+  marque        String
+  oem           String
+  autoFinal     String    @map("auto_final")
+  lib1          String
+  quantity      Int
+  qttArrive     Int       @map("qtt_arrive")
+  poids         Float
+  purchasePrice Decimal
+  salePrice     Decimal
+  margin        Decimal
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+model Entrepot {
+  id         Int      @id @default(autoincrement())
+  libelle    String   @unique
+  stocks     Stock[]  @relation("EntrepotStocks")
+  createdAt  DateTime @default(now()) @map("createdAt")
+  updatedAt  DateTime @updatedAt @map("updatedAt")
+}
+
+model Stock {
+  id             Int         @id @default(autoincrement())
+  product        Product     @relation("ProductStocks", fields: [codeArt], references: [codeArt])
+  codeArt        String      @map("code_art")
+  entrepot       Entrepot    @relation("EntrepotStocks", fields: [entrepots], references: [id])
+  entrepots      Int         @default(0)
+  quantite       Float       @default(0) @map("quantite")
+  quantiteVendu  Float       @default(0) @map("quantite_vendu")
+  prixFinal      Decimal?    @map("prix_final")
+  status         StockStatus @default(DISPONIBLE)
+  createdAt      DateTime    @default(now()) @map("createdAt")
+  updatedAt      DateTime    @updatedAt @map("updatedAt")
+}
+
+model CommandeVente {
+  id            Int               @id @default(autoincrement())
+  reference     String            @unique
+  nomClient     String?           @map("nom_client")
+  mailPhone     String?           @map("mail_phone")
+  libelle       String?
+  status        CommandeStatus?
+  pieces        PiecesCommande[]  @relation("CommandePieces")
+  factures      Facture[]         @relation("CommandeFactures")
+  createdAt     DateTime          @default(now()) @map("createdAt")
+  updatedAt     DateTime          @updatedAt @map("updatedAt")
+}
+
+model PiecesCommande {
+  id            Int           @id @default(autoincrement())
+  commande      CommandeVente @relation("CommandePieces", fields: [commandeRef], references: [reference])
+  commandeRef   String        @map("reference")
+  product       Product       @relation("ProductCommandes", fields: [codeArt], references: [codeArt])
+  codeArt       String        @map("code_art")
+  lib1          String?
+  quantite      Int           @default(0) @map("quantite")
+  prixArticle   Float         @default(0) @map("prix_article")
+  createdAt     DateTime      @default(now()) @map("createdAt")
+  updatedAt     DateTime      @updatedAt @map("updatedAt")
+}
+
+model Facture {
+  id                  Int           @id @default(autoincrement())
+  commandeVente       CommandeVente @relation("CommandeFactures", fields: [commandeRef], references: [reference])
+  commandeRef         String        @map("reference_commande")
+  referenceFacture    String        @unique @map("reference_fact")
+  prixTotal           Float         @map("prix_total")
+  status              String?
+  remises             Remise[]
+  createdAt           DateTime      @default(now()) @map("createdAt")
+  updatedAt           DateTime      @updatedAt @map("updatedAt")
+}
+
+model Remise {
+  id                  Int       @id @default(autoincrement())
+  facture             Facture   @relation(fields: [referenceFacture], references: [referenceFacture])
+  referenceFacture    String    @map("reference_fact")
+  taux                Float     @map("taux")
+  prix                Float     @map("prix")
+  createdAt           DateTime  @default(now()) @map("createdAt")
+  updatedAt           DateTime  @updatedAt @map("updatedAt")
+}
+
+enum CommandeStatus {
+  EN_ATTENTE
+  TRAITEMENT
+  LIVREE
+  ANNULEE
+}
+
+enum StockStatus {
+  DISPONIBLE
+  RUPTURE
+  COMMANDE
+  PREORDER
+  RESERVE
+  RETOUR
+  DEFECTUEUX
+}
