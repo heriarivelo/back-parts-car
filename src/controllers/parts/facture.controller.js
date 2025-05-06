@@ -1,7 +1,7 @@
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
-const { getPrixTotal, getCommandeAvecArticles } = require("../service/CommandeService");
-const { mettreAJourStatusCommande } = require("../service/FactureService");
+const { getPrixTotal, getCommandeAvecArticles } = require("../../services/parts/commandeVente.service");
+const { mettreAJourStatusCommande } = require("../../services/parts/facture.service");
 
 // Générer une facture (prévisualisation)
 const GenererFacture = async (req, res) => {

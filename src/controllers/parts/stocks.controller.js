@@ -1,6 +1,6 @@
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
-const { get_Info_stock_detaille, get_detail_vente_article } = require('../service/StockService');
+const { get_Info_stock_detaille, get_detail_vente_article } = require('../../services/parts/stock.service');
 
 // Recherche multicritère dans le stock
 const getOrSearch = async (req, res) => {
@@ -12,7 +12,7 @@ const getOrSearch = async (req, res) => {
       auto,
       page = 1,
       limit = 10
-    } = req.body;
+    } = req.query;
 
     const skip = (page - 1) * limit;
     const whereConditions = {};
@@ -34,8 +34,8 @@ const getOrSearch = async (req, res) => {
     }
 
     const [total, stocks] = await Promise.all([
-      prisma.vStock.count({ where: whereConditions }),
-      prisma.vStock.findMany({
+      prisma.v_stock.count({ where: whereConditions }),
+      prisma.v_stock.findMany({
         where: whereConditions,
         skip,
         take: parseInt(limit),
@@ -207,11 +207,52 @@ const updateEntrepotStock = async (req, res) => {
   }
 };
 
+// const { PrismaClient } = require('@prisma/client');
+// const prisma = new PrismaClient();
+
+const getStocks = async (req, res) => {
+  try {
+    const stocks = await prisma.stock.findMany({
+      include: {
+        product: true
+      }
+    });
+    res.json(stocks);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+const getStockAnalytics = async (req, res) => {
+  try {
+    const [totalItems, outOfStock, totalValue] = await Promise.all([
+      prisma.stock.count(),
+      prisma.stock.count({ where: { status: 'RUPTURE' } }),
+      prisma.stock.aggregate({
+        _sum: {
+          quantite: true,
+          prixFinal: true
+        }
+      })
+    ]);
+    
+    res.json({
+      totalItems,
+      outOfStock,
+      totalValue: totalValue._sum.prixFinal || 0
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
 module.exports = {
   getOrSearch,
   find_stock_detaille,
   getStocksEntreposes,
   updateEntrepotStock,
   getDetailArticleVendu,
-  findByCode_article
+  findByCode_article,
+  getStocks,
+  getStockAnalytics
 };

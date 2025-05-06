@@ -6,7 +6,8 @@
     "start": "node src/index.js",
     "dev": "nodemon src/index.js",
     "postinstall": "prisma generate",
-    "create-views": "node prisma/scripts/createViews.js"
+    "create-views": "node prisma/scripts/createViews.js",
+    "clean": "rimraf node_modules/.prisma node_modules/.cache"
   },
   "keywords": [],
   "author": "",

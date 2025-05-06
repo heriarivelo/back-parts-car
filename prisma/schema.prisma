@@ -45,6 +45,7 @@ model Product {
 
 model Import {
   id            Int             @id @default(autoincrement())
+  description   String
   tauxDeChange  Decimal
   fretAvecDD    Decimal
   fretSansDD    Decimal
@@ -79,7 +80,6 @@ model ImportedPart {
 model Entrepot {
   id         Int      @id @default(autoincrement())
   libelle    String   @unique
-  stocks     Stock[]  @relation("EntrepotStocks")
   createdAt  DateTime @default(now()) @map("createdAt")
   updatedAt  DateTime @updatedAt @map("updatedAt")
 }
@@ -87,9 +87,9 @@ model Entrepot {
 model Stock {
   id             Int         @id @default(autoincrement())
   product        Product     @relation("ProductStocks", fields: [codeArt], references: [codeArt])
-  codeArt        String      @map("code_art")
-  entrepot       Entrepot    @relation("EntrepotStocks", fields: [entrepots], references: [id])
+  codeArt        String      @unique @map("code_art")
   entrepots      Int         @default(0)
+  lib1           String
   quantite       Float       @default(0) @map("quantite")
   quantiteVendu  Float       @default(0) @map("quantite_vendu")
   prixFinal      Decimal?    @map("prix_final")
